@@ -1,9 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{
-    parse_macro_input, punctuated::Punctuated, Data, DataStruct, DeriveInput, Field, Fields,
-    FieldsNamed, Ident, Token,
-};
+use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields, FieldsNamed, Ident};
 
 #[proc_macro_derive(Builder)]
 pub fn derive(input: TokenStream) -> TokenStream {
@@ -13,16 +10,20 @@ pub fn derive(input: TokenStream) -> TokenStream {
     let bident = Ident::new(&bname, name.span());
 
     let fields = match &ast.data {
-        Data::Struct(DataStruct { fields, .. }) => match fields {
-            Fields::Named(FieldsNamed { named, .. }) => named.iter(),
-            _ => panic!("expected fields in struct"),
-        },
+        Data::Struct(DataStruct {
+            fields: Fields::Named(FieldsNamed { named, .. }),
+            ..
+        }) => named.iter(),
         _ => panic!("expected fields in struct"),
     };
+    let fields = fields.map(|f| {
+        let name = &f.ident;
+        let ty = &f.ty;
 
-    let mut optionized = Punctuated::new();
-
-    let fields = fields.map(|f| {});
+        quote! {
+            #name: Option<#ty>
+        }
+    });
     let gen = quote! {
      pub struct #bident {
             #(#fields,)*
@@ -30,7 +31,11 @@ pub fn derive(input: TokenStream) -> TokenStream {
         impl #name{
             fn builder() -> #bident {
             #bident {
-                }
+                 executable: None,
+                 args: None,
+                 env: None,
+                 current_dir: None,
+         }
             }
         }
     };
