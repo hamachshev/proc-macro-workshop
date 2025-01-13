@@ -16,7 +16,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }) => named.iter(),
         _ => panic!("expected fields in struct"),
     };
-    let fields = fields.map(|f| {
+    let n_fields = fields.clone().map(|f| {
         let name = &f.ident;
         let ty = &f.ty;
 
@@ -24,9 +24,20 @@ pub fn derive(input: TokenStream) -> TokenStream {
             #name: Option<#ty>
         }
     });
+    let methods = fields.map(|f| {
+        let name = &f.ident;
+        let ty = &f.ty;
+        quote! {
+                 fn #name(&mut self, #name: #ty) -> &mut Self {
+                      self.#name = Some(#name);
+                      self
+          }
+        }
+    });
+
     let gen = quote! {
      pub struct #bident {
-            #(#fields,)*
+            #(#n_fields,)*
      }
         impl #name{
             fn builder() -> #bident {
@@ -38,6 +49,10 @@ pub fn derive(input: TokenStream) -> TokenStream {
          }
             }
         }
+        impl #bident {
+            #(#methods)*
+        }
+
     };
     gen.into()
 }
