@@ -13,10 +13,10 @@ pub fn derive(input: TokenStream) -> TokenStream {
         Data::Struct(DataStruct {
             fields: Fields::Named(FieldsNamed { named, .. }),
             ..
-        }) => named.iter(),
+        }) => named,
         _ => panic!("expected fields in struct"),
     };
-    let n_fields = fields.clone().map(|f| {
+    let n_fields = fields.iter().map(|f| {
         let name = &f.ident;
         let ty = &f.ty;
 
@@ -24,7 +24,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
             #name: Option<#ty>
         }
     });
-    let methods = fields.map(|f| {
+    let methods = fields.iter().map(|f| {
         let name = &f.ident;
         let ty = &f.ty;
         quote! {
@@ -34,6 +34,8 @@ pub fn derive(input: TokenStream) -> TokenStream {
           }
         }
     });
+
+    let iter: Vec<_> = fields.iter().map(|f| &f.ident).collect();
 
     let gen = quote! {
      pub struct #bident {
@@ -51,6 +53,17 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
         impl #bident {
             #(#methods)*
+
+         pub fn build(&mut self) -> Result<Command, Box<dyn std::error::Error>> {
+
+    Ok (
+        #name {
+            #(#iter: self.#iter.clone().ok_or("missing field")?,)*
+        }
+    )
+
+             }
+
         }
 
     };
