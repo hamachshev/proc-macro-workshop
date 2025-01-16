@@ -56,13 +56,23 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
     let non_option_iter: Vec<_> = fields
         .iter()
-        .filter(|f| !is_option(&f.ty))
-        .map(|f| &f.ident)
+        .filter_map(|f| {
+            if !is_option(&f.ty) {
+                Some(&f.ident)
+            } else {
+                None
+            }
+        })
         .collect();
     let option_iter: Vec<_> = fields
         .iter()
-        .filter(|f| is_option(&f.ty))
-        .map(|f| &f.ident)
+        .filter_map(|f| {
+            if is_option(&f.ty) {
+                Some(&f.ident)
+            } else {
+                None
+            }
+        })
         .collect();
 
     let default_field_values = fields.iter().map(|f| {
